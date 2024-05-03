@@ -239,7 +239,8 @@ def draw_game_over():
     screen.blit(text, text_rect)
 
 
-# Check all the valid moves for each piece on the board.
+# Check all the possible moves for each piece on the board.
+# Other than the king, the pieces don't take into account checks.
 def check_options(pieces, positions, turn, castle_state):
     moves_list = []
     global castling_moves
@@ -264,7 +265,7 @@ def check_options(pieces, positions, turn, castle_state):
     return all_moves_list
 
 
-# Checks for all valid moves of the given pawn
+# Checks for all moves of the given pawn
 def check_pawn(position, turn):
     moves_list = []
     x = position[0]
@@ -315,7 +316,7 @@ def check_pawn(position, turn):
     return moves_list
 
 
-# Checks for all valid moves of the given queen
+# Checks for all moves of the given queen
 def check_queen(position, turn):
     # Use functions for check bishop and rook moves as the queen has the combined functionality of both pieces
     moves_list = check_bishop(position, turn)
@@ -334,20 +335,28 @@ def check_king(position, turn):
     y = position[1]
     if turn == 'white':
         ally_positions = white_positions
+        enemy_options = black_options
     else:  # Black's turn
         ally_positions = black_positions
+        enemy_options = white_options
 
     # Relative changes in position for each of the 8 position a king can reach by moving 1 tile in any direction
     delta = [(1, 0), (1, 1), (1, -1), (-1, 0), (-1, 1), (-1, -1), (0, 1), (0, -1)]
     for i in range(8):
-        if 0 <= x + delta[i][0] <= 7 and 0 <= y + delta[i][1] <= 7 \
-                and (x + delta[i][0], y + delta[i][1]) not in ally_positions:
-            moves_list.append((x + delta[i][0], y + delta[i][1]))
+        new_pos = (x + delta[i][0], y + delta[i][1])
+        check = False
+        if 0 <= new_pos[0] <= 7 and 0 <= new_pos[1] <= 7 and new_pos not in ally_positions:
+            # Cycle through the options of each of the enemy pieces to see if this move would place the king in check
+            for j in range(len(enemy_options)):
+                if new_pos in enemy_options[j]:
+                    check = True
+            if not check:  # If this move doesn't place the king in check, it is a valid move
+                moves_list.append((x + delta[i][0], y + delta[i][1]))
 
     return moves_list
 
 
-# Checks for all valid moves of the given knight
+# Checks for all moves of the given knight
 def check_knight(position, turn):
     moves_list = []
     x = position[0]
@@ -368,7 +377,7 @@ def check_knight(position, turn):
     return moves_list
 
 
-# Checks for all valid moves of the given rook
+# Checks for all moves of the given rook
 def check_rook(position, turn):
     moves_list = []
     x = position[0]
@@ -415,7 +424,7 @@ def check_rook(position, turn):
     return moves_list
 
 
-# Checks for all valid moves of the given bishop
+# Checks for all moves of the given bishop
 def check_bishop(position, turn):
     moves_list = []
     x = position[0]
@@ -462,8 +471,8 @@ def check_bishop(position, turn):
     return moves_list
 
 
-# Return the valid moves for the selected pieces
-def check_valid_moves():
+# Returns the valid moves for the selected pieces
+def return_valid_moves():
     castling_options = []
     if turn_step < 2:
         valid_options = white_options[selection]
@@ -633,6 +642,21 @@ def draw_check(check, king_position):
                                               Y_OFFSET + king_position[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE], 5)
 
 
+#
+def check_pins_and_checks():
+    pass
+
+
+#
+def trim_invalid_moves():
+    pass
+
+
+#
+def check_game_over():
+    pass
+
+
 # Main Game Loop
 run = True
 black_options = check_options(black_pieces, black_positions, 'black', black_castling_state)
@@ -656,7 +680,7 @@ while run:
         pawn_promotion()
 
     if selection != -1:
-        valid_moves, castling_moves = check_valid_moves()
+        valid_moves, castling_moves = return_valid_moves()
         draw_valid(valid_moves)
         draw_castling(castling_moves)
 
