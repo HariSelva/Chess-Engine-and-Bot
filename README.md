@@ -13,7 +13,8 @@ I have been playing chess since elementary school and ever since learning to cod
 * pygame 2.5.2
 
 ## TODO
-- [ ] Implement Check, Checkmate, and Stalemates
+- [ ] Implement removal of non-valid moves when in Check or if a piece is pinned
+- [ ] Implement Checkmate, and Stalemates
 - [ ] Add timer for blitz/speed chess
 - [ ] Cleaning up the code - Separate into different files and functions
 - [ ] Main menu to select game mode (player vs player/computer), customize board colours, change piece styles
