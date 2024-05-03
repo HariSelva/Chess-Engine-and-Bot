@@ -16,7 +16,8 @@ I have been playing chess since elementary school and ever since learning to cod
 - [ ] Implement Check, Checkmate, and Stalemates
 - [ ] Add timer for blitz/speed chess
 - [ ] Cleaning up the code - Separate into different files and functions
+- [ ] Main menu to select game mode (player vs player/computer), customize board colours, change piece styles
+- [ ] Create Chess AI/Bot
 - [ ] Optimize code - Using dictionaries, numpy array
 - [ ] Stalemate on 3 repeated moves or 50 moves without capture/pawn advancement.
-- [ ] Main menu to select game mode (player vs player/computer), customize board colours, change piece styles
 - [ ] Add in recording and viewing functionality - save a log of past chess games using notation so that they can be reviewed at a later date
