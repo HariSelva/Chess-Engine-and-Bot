@@ -239,11 +239,9 @@ def draw_game_over():
     screen.blit(text, text_rect)
 
 
-# Check all the possible moves for each piece on the board.
-# Other than the king, the pieces don't take into account checks.
-def check_options(pieces, positions, turn, castle_state):
+# Check all the possible moves for each piece on the board not taking into account checks.
+def check_options(pieces, positions, turn):
     moves_list = []
-    global castling_moves
     all_moves_list = []
 
     for i in range(len(pieces)):
@@ -262,6 +260,7 @@ def check_options(pieces, positions, turn, castle_state):
         elif piece == 'bishop':
             moves_list = check_bishop(position, turn)
         all_moves_list.append(moves_list)
+
     return all_moves_list
 
 
@@ -335,10 +334,8 @@ def check_king(position, turn):
     y = position[1]
     if turn == 'white':
         ally_positions = white_positions
-        enemy_options = black_options
     else:  # Black's turn
         ally_positions = black_positions
-        enemy_options = white_options
 
     # Relative changes in position for each of the 8 position a king can reach by moving 1 tile in any direction
     delta = [(1, 0), (1, 1), (1, -1), (-1, 0), (-1, 1), (-1, -1), (0, 1), (0, -1)]
@@ -346,12 +343,7 @@ def check_king(position, turn):
         new_pos = (x + delta[i][0], y + delta[i][1])
         check = False
         if 0 <= new_pos[0] <= 7 and 0 <= new_pos[1] <= 7 and new_pos not in ally_positions:
-            # Cycle through the options of each of the enemy pieces to see if this move would place the king in check
-            for j in range(len(enemy_options)):
-                if new_pos in enemy_options[j]:
-                    check = True
-            if not check:  # If this move doesn't place the king in check, it is a valid move
-                moves_list.append((x + delta[i][0], y + delta[i][1]))
+            moves_list.append((x + delta[i][0], y + delta[i][1]))
 
     return moves_list
 
@@ -642,6 +634,69 @@ def draw_check(check, king_position):
                                               Y_OFFSET + king_position[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE], 5)
 
 
+def trim_invalid_king_moves(ally_options, enemy_options, king_position, turn):
+    global white_pieces
+    global white_positions
+    global black_pieces
+    global black_positions
+
+    if turn == 'white':
+        king_index = white_positions.index(king_position)
+        ally_positions = white_positions
+        enemy_pieces = black_pieces
+        enemy_positions = black_positions
+        enemy_colour = 'black'
+    else:  # Black's turn
+        king_index = black_positions.index(king_position)
+        ally_positions = black_positions
+        enemy_pieces = white_pieces
+        enemy_positions = white_positions
+        enemy_colour = 'white'
+
+    moves_to_remove = []
+    for i in range(len(ally_options[king_index])):
+        move = ally_options[king_index][i]
+
+        # If square is empty check enemy's possible moves to see if they are attacking the square
+        # Don't need to check if move is not in ally positions as that isn't a possible move
+        if move not in enemy_positions:
+            for j in range(len(enemy_options)):
+                if move in enemy_options[j]:
+                    moves_to_remove.append(i)
+                    break
+        else:  # If square is occupied by an enemy, pretend to capture to see if that would cause a check
+            # Temporarily complete the capturing of enemy piece
+            ally_positions[king_index] = move
+            captured_piece_index = enemy_positions.index(move)
+            captured_piece = enemy_pieces[captured_piece_index]
+            enemy_pieces.pop(captured_piece_index)
+            enemy_positions.pop(captured_piece_index)
+
+            # Recalculate enemy moves based on new position of king, and determine if it is in check.
+            # If so, add this move to removal list
+            enemy_options_future = check_options(enemy_pieces, enemy_positions, enemy_colour)
+            for j in range(len(enemy_options_future)):
+                if move in enemy_options_future[j]:
+                    moves_to_remove.append(i)
+                    break
+
+            # Undo the temporary capture
+            ally_positions[king_index] = king_position
+            if turn == 'black':
+                white_pieces = white_pieces[0:captured_piece_index] + [captured_piece] + white_pieces[captured_piece_index:]
+                white_positions = white_positions[0:captured_piece_index] + [move] + white_positions[captured_piece_index:]
+            else:  # White's turn
+                black_pieces = black_pieces[0:captured_piece_index] + [captured_piece] + black_pieces[captured_piece_index:]
+                black_positions = black_positions[0:captured_piece_index] + [move] + black_positions[captured_piece_index:]
+    print(ally_options[king_index])
+    print(moves_to_remove)
+    for move in moves_to_remove[::-1]:
+        ally_options[king_index].pop(move)
+
+    return ally_options
+
+
+
 #
 def check_pins_and_checks():
     pass
@@ -659,8 +714,8 @@ def check_game_over():
 
 # Main Game Loop
 run = True
-black_options = check_options(black_pieces, black_positions, 'black', black_castling_state)
-white_options = check_options(white_pieces, white_positions, 'white', white_castling_state)
+black_options = check_options(black_pieces, black_positions, 'black')
+white_options = check_options(white_pieces, white_positions, 'white')
 while run:
     timer.tick(fps)
     screen.fill(GREY)
@@ -743,8 +798,10 @@ while run:
                     white_castling_state = update_castling_state(last_moved[0], last_moved[1], white_castling_state)
 
                     # Reset/Update values for next turn
-                    black_options = check_options(black_pieces, black_positions, 'black', black_castling_state)
-                    white_options = check_options(white_pieces, white_positions, 'white', white_castling_state)
+                    black_options = check_options(black_pieces, black_positions, 'black')
+                    white_options = check_options(white_pieces, white_positions, 'white')
+                    black_options = trim_invalid_king_moves(black_options, white_options, black_king_position, 'black')
+                    white_options = trim_invalid_king_moves(white_options, black_options, white_king_position, 'white')
                     turn_step = 2
                     selection = -1
                     valid_moves = []
@@ -765,8 +822,10 @@ while run:
                     white_castling_state = update_castling_state(last_moved[0], last_moved[1], white_castling_state)
 
                     # Reset/Update values for next turn
-                    black_options = check_options(black_pieces, black_positions, 'black', black_castling_state)
-                    white_options = check_options(white_pieces, white_positions, 'white', white_castling_state)
+                    black_options = check_options(black_pieces, black_positions, 'black')
+                    white_options = check_options(white_pieces, white_positions, 'white')
+                    black_options = trim_invalid_king_moves(black_options, white_options, black_king_position, 'black')
+                    white_options = trim_invalid_king_moves(white_options, black_options, white_king_position, 'white')
                     turn_step = 2
                     selection = -1
                     valid_moves = []
@@ -812,8 +871,10 @@ while run:
                     black_castling_state = update_castling_state(last_moved[0], last_moved[1], black_castling_state)
 
                     # Reset/Update values for next turn
-                    black_options = check_options(black_pieces, black_positions, 'black', black_castling_state)
-                    white_options = check_options(white_pieces, white_positions, 'white', white_castling_state)
+                    black_options = check_options(black_pieces, black_positions, 'black')
+                    white_options = check_options(white_pieces, white_positions, 'white')
+                    black_options = trim_invalid_king_moves(black_options, white_options, black_king_position, 'black')
+                    white_options = trim_invalid_king_moves(white_options, black_options, white_king_position, 'white')
                     turn_step = 0
                     selection = -1
                     valid_moves = []
@@ -834,8 +895,10 @@ while run:
                     black_castling_state = update_castling_state(last_moved[0], last_moved[1], black_castling_state)
 
                     # Reset/Update values for next turn
-                    black_options = check_options(black_pieces, black_positions, 'black', black_castling_state)
-                    white_options = check_options(white_pieces, white_positions, 'white', white_castling_state)
+                    black_options = check_options(black_pieces, black_positions, 'black')
+                    white_options = check_options(white_pieces, white_positions, 'white')
+                    black_options = trim_invalid_king_moves(black_options, white_options, black_king_position, 'black')
+                    white_options = trim_invalid_king_moves(white_options, black_options, white_king_position, 'white')
                     turn_step = 0
                     selection = -1
                     valid_moves = []
@@ -864,8 +927,8 @@ while run:
                 turn_step = 0
                 selection = -1
                 valid_moves = []
-                black_options = check_options(black_pieces, black_positions, 'black', black_castling_state)
-                white_options = check_options(white_pieces, white_positions, 'white', white_castling_state)
+                black_options = check_options(black_pieces, black_positions, 'black')
+                white_options = check_options(white_pieces, white_positions, 'white')
                 white_promotion = False
                 white_promotion_index = -1
                 black_promotion = False
