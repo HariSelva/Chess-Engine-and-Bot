@@ -42,9 +42,9 @@ WHITE = (255, 255, 255)
 GREY = (128, 128, 128)
 BEIGE = (232, 220, 202)
 GREEN = (110, 145, 0)
-YELLOW = (204, 204, 0)
-BLUE = (50, 255, 255)
-BLACK = (0, 0, 0)
+# YELLOW = (204, 204, 0)
+# BLUE = (50, 255, 255)
+# BLACK = (0, 0, 0)
 
 # game variables
 white_pieces = ['rook', 'knight', 'bishop', 'king', 'queen', 'bishop', 'knight', 'rook',
@@ -59,12 +59,13 @@ captured_pieces_white = []
 captured_pieces_black = []
 white_options = []
 black_options = []
+white_king_position = (3, 0)
+black_king_position = (3, 7)
+
 valid_moves = []
 last_moved = ["", (-1, -1), (-1, -1)]
 en_passant_coords = (-1, -1)
 castling_moves = []
-white_king_position = (3, 0)
-black_king_position = (3, 7)
 
 # load in game images
 black_avatar = pygame.image.load('Assets/avatar player 2.png')
@@ -114,29 +115,32 @@ small_white_images = [white_pawn_small, white_queen_small, white_king_small, whi
 black_images = [black_pawn, black_queen, black_king, black_knight, black_rook, black_bishop]
 small_black_images = [black_pawn_small, black_queen_small, black_king_small, black_knight_small,
                       black_rook_small, black_bishop_small]
+
+
 piece_list = ['pawn', 'queen', 'king', 'knight', 'rook', 'bishop']
 promotion_options = ['bishop', 'knight', 'rook', 'queen']
+forfeit_coords = [(int(WIDTH * 0.045), int(HEIGHT * 0.023)), (int(WIDTH * 0.813), int(HEIGHT * 0.912))]
 
 # check variables for determine various states of the game
 winner = ''
 game_over = False
-# 0-whites turn no selection; 1-whites turn piece selected; 2-black turn no selection; 3-black turn piece selected
-turn_step = 0
+game_over_mode = ''
+under_check = False
 selection = -1
 white_promotion = False
 white_promotion_index = -1
 black_promotion = False
 black_promotion_index = -1
+
 # 0-Both castling moves are available; 1-Only King side available; 2-Only Queen side available; 3-Neither is available
 white_castling_state = 0
 black_castling_state = 0
-white_check = False
-black_check = False
 
-forfeit_coords = [(int(WIDTH * 0.045), int(HEIGHT * 0.023)), (int(WIDTH * 0.813), int(HEIGHT * 0.912))]
+# 0-whites turn no selection; 1-whites turn piece selected; 2-black turn no selection; 3-black turn piece selected
+turn_step = 0
 
 
-# draw main game board
+# Draws the main game board
 def draw_board():
     # Drawing the board tiles
     pygame.draw.rect(screen, BEIGE, [X_OFFSET-10, Y_OFFSET-10, BOARD_DIMENSION + 20, BOARD_DIMENSION + 20])
@@ -228,17 +232,6 @@ def draw_pieces():
                                               TILE_SIZE * (black_positions[i][1] + 0.12) + Y_OFFSET))
 
 
-# draws the game over screen
-def draw_game_over():
-    pygame.draw.rect(screen, 'grey', [0, 0, WIDTH, HEIGHT])
-    text = big_font.render(f'{winner} won the game!', True, WHITE)
-    text_rect = text.get_rect(center=(WIDTH / 2, HEIGHT / 2))
-    screen.blit(text, text_rect)
-    text = font.render(f'Press ENTER to Restart!', True, WHITE)
-    text_rect = text.get_rect(center=(WIDTH / 2, (HEIGHT + TILE_SIZE)/ 2 ))
-    screen.blit(text, text_rect)
-
-
 # Check all the possible moves for each piece on the board not taking into account checks.
 def check_options(pieces, positions, turn):
     moves_list = []
@@ -267,48 +260,50 @@ def check_options(pieces, positions, turn):
 # Checks for all moves of the given pawn
 def check_pawn(position, turn):
     moves_list = []
-    x = position[0]
-    y = position[1]
+    pawn_x = position[0]
+    pawn_y = position[1]
     global en_passant_coords
     if turn == 'white':
         # Move pawn forward 1 space
-        if (x, y+1) not in white_positions and (x, y+1) not in black_positions and y < 7:
-            moves_list.append((x, y+1))
+        if (pawn_x, pawn_y + 1) not in white_positions and (pawn_x, pawn_y + 1) not in black_positions and pawn_y < 7:
+            moves_list.append((pawn_x, pawn_y + 1))
 
             # Move pawn forward 2 space during its first move
-            if (x, y+2) not in white_positions and (x, y+2) not in black_positions and y == 1:
-                moves_list.append((x, y+2))
+            if (pawn_x, pawn_y + 2) not in white_positions and (pawn_x, pawn_y + 2) not in black_positions \
+                    and pawn_y == 1:
+                moves_list.append((pawn_x, pawn_y + 2))
 
         # Move diagonally 1 space to capture an enemy piece
-        if (x+1, y+1) in black_positions:
-            moves_list.append((x+1, y+1))
-        if (x-1, y+1) in black_positions:
-            moves_list.append((x-1, y+1))
+        if (pawn_x + 1, pawn_y + 1) in black_positions:
+            moves_list.append((pawn_x + 1, pawn_y + 1))
+        if (pawn_x - 1, pawn_y + 1) in black_positions:
+            moves_list.append((pawn_x - 1, pawn_y + 1))
 
         # En Passant
-        if y == 4 and last_moved[0] == 'pawn' and last_moved[1][1] == 6 and last_moved[2][1] == 4 and \
-                abs(last_moved[1][0] - x) == 1:
+        if pawn_y == 4 and last_moved[0] == 'pawn' and last_moved[1][1] == 6 and last_moved[2][1] == 4 and \
+                abs(last_moved[1][0] - pawn_x) == 1:
             en_passant_coords = (last_moved[2][0], 5)
             moves_list.append(en_passant_coords)
 
     else:  # Black's turn
         # Move pawn forward 1 space
-        if (x, y - 1) not in white_positions and (x, y - 1) not in black_positions and y > 0:
-            moves_list.append((x, y - 1))
+        if (pawn_x, pawn_y - 1) not in white_positions and (pawn_x, pawn_y - 1) not in black_positions and pawn_y > 0:
+            moves_list.append((pawn_x, pawn_y - 1))
 
             # Move pawn forward 2 space during its first move
-            if (x, y - 2) not in white_positions and (x, y - 2) not in black_positions and y == 6:
-                moves_list.append((x, y - 2))
+            if (pawn_x, pawn_y - 2) not in white_positions and (pawn_x, pawn_y - 2) not in black_positions \
+                    and pawn_y == 6:
+                moves_list.append((pawn_x, pawn_y - 2))
 
         # Move diagonally 1 space to capture an enemy piece
-        if (x + 1, y - 1) in white_positions:
-            moves_list.append((x + 1, y - 1))
-        if (x - 1, y - 1) in white_positions:
-            moves_list.append((x - 1, y - 1))
+        if (pawn_x + 1, pawn_y - 1) in white_positions:
+            moves_list.append((pawn_x + 1, pawn_y - 1))
+        if (pawn_x - 1, pawn_y - 1) in white_positions:
+            moves_list.append((pawn_x - 1, pawn_y - 1))
 
         # En Passant
-        if y == 3 and last_moved[0] == 'pawn' and last_moved[1][1] == 1 and last_moved[2][1] == 3 and \
-                abs(last_moved[1][0] - x) == 1:
+        if pawn_y == 3 and last_moved[0] == 'pawn' and last_moved[1][1] == 1 and last_moved[2][1] == 3 and \
+                abs(last_moved[1][0] - pawn_x) == 1:
             en_passant_coords = (last_moved[2][0], 2)
             moves_list.append(en_passant_coords)
 
@@ -327,11 +322,11 @@ def check_queen(position, turn):
     return moves_list
 
 
-# Checks for all valid moves of the given king
+# Checks for all moves of the given king
 def check_king(position, turn):
     moves_list = []
-    x = position[0]
-    y = position[1]
+    king_x = position[0]
+    king_y = position[1]
     if turn == 'white':
         ally_positions = white_positions
     else:  # Black's turn
@@ -340,10 +335,9 @@ def check_king(position, turn):
     # Relative changes in position for each of the 8 position a king can reach by moving 1 tile in any direction
     delta = [(1, 0), (1, 1), (1, -1), (-1, 0), (-1, 1), (-1, -1), (0, 1), (0, -1)]
     for i in range(8):
-        new_pos = (x + delta[i][0], y + delta[i][1])
-        check = False
+        new_pos = (king_x + delta[i][0], king_y + delta[i][1])
         if 0 <= new_pos[0] <= 7 and 0 <= new_pos[1] <= 7 and new_pos not in ally_positions:
-            moves_list.append((x + delta[i][0], y + delta[i][1]))
+            moves_list.append(new_pos)
 
     return moves_list
 
@@ -351,8 +345,8 @@ def check_king(position, turn):
 # Checks for all moves of the given knight
 def check_knight(position, turn):
     moves_list = []
-    x = position[0]
-    y = position[1]
+    knight_x = position[0]
+    knight_y = position[1]
     if turn == 'white':
         ally_positions = white_positions
     else:  # Black's turn
@@ -362,9 +356,9 @@ def check_knight(position, turn):
     # and 1 in the perpendicular direction
     delta = [(1, 2), (1, -2), (2, 1), (2, -1), (-1, 2), (-1, -2), (-2, 1), (-2, -1)]
     for i in range(8):
-        if 0 <= x + delta[i][0] <= 7 and 0 <= y + delta[i][1] <= 7 and \
-                (x + delta[i][0], y + delta[i][1]) not in ally_positions:
-            moves_list.append((x + delta[i][0], y + delta[i][1]))
+        new_pos = (knight_x + delta[i][0], knight_y + delta[i][1])
+        if 0 <= new_pos[0] <= 7 and 0 <= new_pos[1] <= 7 and new_pos not in ally_positions:
+            moves_list.append(new_pos)
 
     return moves_list
 
@@ -372,8 +366,8 @@ def check_knight(position, turn):
 # Checks for all moves of the given rook
 def check_rook(position, turn):
     moves_list = []
-    x = position[0]
-    y = position[1]
+    rook_x = position[0]
+    rook_y = position[1]
     if turn == 'white':
         enemy_positions = black_positions
         ally_positions = white_positions
@@ -399,16 +393,16 @@ def check_rook(position, turn):
 
         # Coordinates for the various possible titles that the selected piece can move to, initially set to the current
         # position of the selected piece
-        x_valid = x
-        y_valid = y
+        new_x = rook_x
+        new_y = rook_y
         while path:
-            x_valid = x_valid + delta_x
-            y_valid = y_valid + delta_y
-            if 0 <= x_valid <= 7 and 0 <= y_valid <= 7 and (x_valid, y_valid) not in ally_positions:
-                moves_list.append((x_valid, y_valid))
+            new_x = new_x + delta_x
+            new_y = new_y + delta_y
+            if 0 <= new_x <= 7 and 0 <= new_y <= 7 and (new_x, new_y) not in ally_positions:
+                moves_list.append((new_x, new_y))
 
                 # If piece has encountered an enemy piece, it cannot go any further
-                if (x_valid, y_valid) in enemy_positions:
+                if (new_x, new_y) in enemy_positions:
                     path = False
             else:  # If piece has encountered the end of the board or an allied piece, it cannot go any further
                 path = False
@@ -419,8 +413,8 @@ def check_rook(position, turn):
 # Checks for all moves of the given bishop
 def check_bishop(position, turn):
     moves_list = []
-    x = position[0]
-    y = position[1]
+    bishop_x = position[0]
+    bishop_y = position[1]
     if turn == 'white':
         enemy_positions = black_positions
         ally_positions = white_positions
@@ -446,16 +440,16 @@ def check_bishop(position, turn):
 
         # Coordinates for the various possible titles that the selected piece can move to, initially set to the current
         # position of the selected piece
-        x_valid = x
-        y_valid = y
+        new_x = bishop_x
+        new_y = bishop_y
         while path:
-            x_valid = x_valid + delta_x
-            y_valid = y_valid + delta_y
-            if 0 <= x_valid <= 7 and 0 <= y_valid <= 7 and (x_valid, y_valid) not in ally_positions:
-                moves_list.append((x_valid, y_valid))
+            new_x = new_x + delta_x
+            new_y = new_y + delta_y
+            if 0 <= new_x <= 7 and 0 <= new_y <= 7 and (new_x, new_y) not in ally_positions:
+                moves_list.append((new_x, new_y))
 
                 # If piece has encountered an enemy piece, it cannot go any further
-                if (x_valid, y_valid) in enemy_positions:
+                if (new_x, new_y) in enemy_positions:
                     path = False
             else:  # If piece has encountered the end of the board or an allied piece, it cannot go any further
                 path = False
@@ -463,7 +457,7 @@ def check_bishop(position, turn):
     return moves_list
 
 
-# Returns the valid moves for the selected pieces
+# Returns the valid moves for the selected piece
 def return_valid_moves():
     castling_options = []
     if turn_step < 2:
@@ -478,7 +472,7 @@ def return_valid_moves():
     return valid_options, castling_options
 
 
-# draw valid moves on screen
+# Draws valid moves on screen
 def draw_valid(moves):
     if turn_step < 2:
         color = 'red'
@@ -489,12 +483,13 @@ def draw_valid(moves):
                                            (moves[i][1] + 0.5) * TILE_SIZE + Y_OFFSET), 5)
 
 
-# draw captured pieces on either side of the chess board
+# Draws captured pieces on either side of the chess board
 def draw_captured():
     for i in range(len(captured_pieces_white)):
         captured_piece = captured_pieces_white[i]
         index = piece_list.index(captured_piece)
-        screen.blit(small_black_images[index], (X_OFFSET - SMALL_PIECE_DIMENSIONS[0] - 10,  Y_OFFSET + 1.2 * SMALL_PIECE_DIMENSIONS[0] * i))
+        screen.blit(small_black_images[index],
+                    (X_OFFSET - SMALL_PIECE_DIMENSIONS[0] - 10,  Y_OFFSET + 1.2 * SMALL_PIECE_DIMENSIONS[0] * i))
     for i in range(len(captured_pieces_black)):
         captured_piece = captured_pieces_black[i]
         index = piece_list.index(captured_piece)
@@ -503,10 +498,13 @@ def draw_captured():
                      BOARD_DIMENSION - 1.2 * SMALL_PIECE_DIMENSIONS[0] * i))
 
 
-# draw the promotion selection menu and promote the pawn to the selected power piece
+# Draw the promotion selection menu and promote the pawn to the selected power piece
 def pawn_promotion():
     global white_promotion
     global black_promotion
+    global white_options
+    global black_options
+
     window_corner = (-1, -1)
 
     # Draw the pawn promotion piece selection window
@@ -531,7 +529,7 @@ def pawn_promotion():
                                               1.12 * AVATAR_TILE_SIZE + TILE_SIZE * (i + 0.12 - 1)))
         pygame.draw.rect(screen, color, [window_corner[0], window_corner[1], TILE_SIZE, TILE_SIZE * 4.2], 8)
 
-    # Determine which piece was selected
+    # Determine which piece was selected, promote the pawn and then recalculate the moves
     mouse_pos = pygame.mouse.get_pos()
     left_click = pygame.mouse.get_pressed()[0]
     x_pos = mouse_pos[0]
@@ -539,12 +537,21 @@ def pawn_promotion():
     if white_promotion and left_click and window_corner[0] <= x_pos <= window_corner[0] + TILE_SIZE and 0 <= y_pos < 4:
         white_pieces[white_promotion_index] = promotion_options[y_pos]
         white_promotion = False
-    elif black_promotion and left_click and window_corner[0] <= x_pos <= window_corner[0] + TILE_SIZE and 0 <= y_pos < 4:
+
+        black_options = check_options(black_pieces, black_positions, 'black')
+        white_options = check_options(white_pieces, white_positions, 'white')
+        trim_invalid_moves('black')
+    elif black_promotion and left_click and window_corner[0] <= x_pos <= window_corner[0] + TILE_SIZE \
+            and 0 <= y_pos < 4:
         black_pieces[black_promotion_index] = promotion_options[y_pos]
         black_promotion = False
 
+        black_options = check_options(black_pieces, black_positions, 'black')
+        white_options = check_options(white_pieces, white_positions, 'white')
+        trim_invalid_moves('white')
 
-# Updates the castling state and whether king/queen side (or neither) are available to castle
+
+# Updates the castling state - whether king/queen side (or neither) are available to castle
 def update_castling_state(piece_moved, original_position, state):
     if state == 3:  # Castling is no longer available, state cannot change
         return state
@@ -564,7 +571,7 @@ def update_castling_state(piece_moved, original_position, state):
     return state
 
 
-# Check if the king can complete a castling operation
+# Checks if the king can complete a castling operation - castling availability (aka state), under checks, and open path
 def check_castling(king_position, turn, state):
     if state == 3:
         return []
@@ -591,7 +598,7 @@ def check_castling(king_position, turn, state):
     if state == 0 or state == 2:
         castling = True
         squares_to_check = [(king_position[0] + 1, king_position[1]), (king_position[0] + 2, king_position[1]),
-                         (king_position[0] + 3, king_position[1])]
+                            (king_position[0] + 3, king_position[1])]
         for square in squares_to_check:
             # Check if these squares have a piece on them and whether they are in check. If so castling not possible
             if square in ally_positions or square in enemy_positions or square in enemy_options:
@@ -601,7 +608,7 @@ def check_castling(king_position, turn, state):
     return castling_options
 
 
-# Drawing the option to castle for the king
+# Draws the option to castle for the king
 def draw_castling(moves):
     if turn_step < 2:
         color = 'red'
@@ -612,104 +619,293 @@ def draw_castling(moves):
                                            (moves[i][1] + 0.5) * TILE_SIZE + Y_OFFSET), 5)
 
 
-# Check if king is in check
-def in_check(king_position, turn):
+# Looks for pieces that are pinned due to an attacking enemy piece.
+# It also looks for pieces that are attacking the king (aka check).
+def check_pins_and_checks(turn):
+    pins = []
+    checks = []
+    in_check = False
     if turn == 'white':
-        enemy_options = black_options
+        ally_positions = white_positions
+        enemy_pieces = black_pieces
+        enemy_positions = black_positions
+        king_position = white_king_position
     else:  # Black's turn
-        enemy_options = white_options
+        ally_positions = black_positions
+        enemy_pieces = white_pieces
+        enemy_positions = white_positions
+        king_position = black_king_position
 
-    # Cycle through the options of each of the enemy pieces and see if the king's position is also there
-    for i in range(len(enemy_options)):
-        if king_position in enemy_options[i]:
-            return True
+    # Look outwards from king for pins and checks, while keeping track of pinned pieces
+    # directions = left,    up,      right,  down, up-left, down-left, up-right, down-right
+    directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))
+    for d, direction in enumerate(directions):
+        possible_pin = ()
+        for i in range(1, 8):
+            new_pos = (king_position[0] + direction[0] * i, king_position[1] + direction[1] * i)
+            if 0 <= new_pos[0] <= 7 and 0 <= new_pos[1] <= 7:
+                if new_pos in ally_positions:  # and not king
+                    if possible_pin == ():  # first allied piece might be a pinned piece
+                        possible_pin = (new_pos[0], new_pos[1], direction[0], direction[1])
+                    else:  # Found a second allied piece, which means there is no check or pin in this direction
+                        break
+                elif new_pos in enemy_positions:
+                    index = enemy_positions.index(new_pos)
+                    enemy_type = enemy_pieces[index]
 
-    return False
+                    # 5 possibilities in this complex conditional
+                    # 1. Horizontally or Vertically away from king and piece is a rook
+                    # 2. Diagonally away from king and piece is a bishop
+                    # 3. 1 square away diagonally from king and piece is a pawn.
+                    #    Note the differing directions based on whose turn it is
+                    # 4. Any direction and piece is a queen
+                    # 5. Any direction 1 square away and piece is a king
+                    if (0 <= d <= 3 and enemy_type == 'rook') \
+                            or (4 <= d <= 7 and enemy_type == 'bishop') \
+                            or (i == 1 and enemy_type == 'pawn' and
+                                ((turn == 'white' and (d == 5 or d == 7)) or
+                                 (turn == 'black' and (d == 4 or d == 6)))) \
+                            or (enemy_type == 'queen') \
+                            or (i == 1 and enemy_type == 'king'):
+                        if possible_pin == ():  # No piece blocking, so check
+                            in_check = True
+                            checks.append((new_pos[0], new_pos[1], direction[0], direction[1]))
+                            break
+                        else:  # There is a piece blocking this check, so it is a pinned piece
+                            pins.append(possible_pin)
+                            break
+                    else:  # enemy piece that isn't applying a check
+                        break
+            else:  # Coordinates out of board bounds
+                break
+
+    # Check for knight checks
+    knight_moves = ((-2, -1), (-2, 1), (-1, 2), (1, 2), (2, -1), (2, 1), (-1, -2), (1, -2))
+    for move in knight_moves:
+        new_pos = (king_position[0] + move[0], king_position[1] + move[1])
+        if 0 <= new_pos[0] <= 7 and 0 <= new_pos[1] <= 7:
+            if new_pos in enemy_positions:
+                index = enemy_positions.index(new_pos)
+                enemy_type = enemy_pieces[index]
+                if enemy_type == 'knight':
+                    in_check = True
+                    checks.append((new_pos[0], new_pos[1], move[0], move[1]))
+
+    return in_check, pins, checks
 
 
-#  Draws a red border around the king if it is in check
+# Draws a red border around the king if it is in check
 def draw_check(check, king_position):
     if check:
         pygame.draw.rect(screen, 'dark red', [X_OFFSET + king_position[0] * TILE_SIZE,
                                               Y_OFFSET + king_position[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE], 5)
 
 
-def trim_invalid_king_moves(ally_options, enemy_options, king_position, turn):
-    global white_pieces
-    global white_positions
-    global black_pieces
-    global black_positions
+# Removes invalid moves from the options list. Invalid moves are moves that would put the king in check.
+def trim_invalid_moves(turn):
+    in_check, pins, checks = check_pins_and_checks(turn)
 
     if turn == 'white':
+        king_position = white_king_position
+        king_index = white_positions.index(king_position)
+        ally_pieces = white_pieces
+        ally_positions = white_positions
+        ally_options = white_options
+        enemy_positions = black_positions
+        enemy_pieces = black_pieces
+    else:  # Black's turn
+        king_position = black_king_position
+        king_index = black_positions.index(king_position)
+        ally_pieces = black_pieces
+        ally_positions = black_positions
+        ally_options = black_options
+        enemy_positions = white_positions
+        enemy_pieces = white_pieces
+
+    if in_check:
+        # If the king is being checked by only 1 enemy, you can capture the piece, block the check, or move the king
+        if len(checks) == 1:
+            check_pos = (checks[0][0],  checks[0][1])
+            check_dir = (checks[0][2],  checks[0][3])
+            index = enemy_positions.index(check_pos)
+            checking_piece = enemy_pieces[index]
+            valid_squares = []  # squares that pieces can legally move to
+
+            # If the checking piece is a knight, the option to block no longer exists.
+            # You can only capture or move the king
+            if checking_piece == 'knight':
+                valid_squares = [check_pos]
+            else:
+                for i in range(1, 8):
+                    valid_square = (king_position[0] + check_dir[0] * i, king_position[1] + check_dir[1] * i)
+                    valid_squares.append(valid_square)
+                    if valid_square == check_pos:  # The valid squares ends when you get to the checking piece
+                        break
+
+            # Get rid of any moves that don't block check
+            for i in range(len(ally_options)):
+                if i == king_index:
+                    trim_invalid_king_moves(turn)
+                else:
+                    # Iterate through the list backwards, while removing corresponding elements
+                    for j in range(len(ally_options[i]) - 1, -1, -1):
+                        if ally_options[i][j] not in valid_squares:
+                            ally_options[i].pop(j)
+
+        # More than 1 piece causing check. This is when there is a double check (triple and more are impossible).
+        # In this case, the king is forced to move. Thus, remove all moves from other pieces.
+        else:
+            for i in range(len(ally_options)):
+                if i == king_index:
+                    trim_invalid_king_moves(turn)
+                else:
+                    ally_options[i] = []
+    else:  # If the king is not in check, we still need to trim the kings moves to ensure it doesn't move into check
+        trim_invalid_king_moves(turn)
+
+    # Check through pinned pieces and trim invalid moves.
+    # These pieces can only move along the path of check, as they need to continue blocking the attacking piece.
+    # If in check, these pieces may not have any moves to trim as they will have been trimmed in the earlier step.
+    for pin in pins:
+        pin_pos = (pin[0], pin[1])
+        pin_dir = (pin[2], pin[3])
+        negative_pin_dir = (-pin[2], -pin[3])
+
+        pinned_piece_index = ally_positions.index(pin_pos)
+        pinned_piece = ally_pieces[pinned_piece_index]
+
+        # A knight moves in an 'L' shape, and thus, it cannot move and still be blocking they path of check.
+        # As such all its moves an invalid, since they all lead to the king being in check
+        if pinned_piece == 'knight':
+            ally_options[pinned_piece_index] = []
+        else:
+            for j in range(len(ally_options[pinned_piece_index]) - 1, -1, -1):
+                move = ally_options[pinned_piece_index][j]
+                distance = (move[0] - pin_pos[0], move[1] - pin_pos[1])
+                #  Ensure we aren't dividing by zero
+                if distance[0] == 0:
+                    dir_x = 0
+                else:
+                    dir_x = distance[0] / abs(distance[0])
+                if distance[1] == 0:
+                    dir_y = 0
+                else:
+                    dir_y = distance[1] / abs(distance[1])
+                direction = (dir_x, dir_y)
+                # If this move is not along the path of check, it is invalid and needs to be removed
+                if direction != pin_dir and direction != negative_pin_dir:
+                    ally_options[pinned_piece_index].pop(j)
+
+
+# Removes the king's invalid moves from the options list. Invalid moves are those where the king moves into check.
+def trim_invalid_king_moves(turn):
+    global white_pieces
+    global white_positions
+    global white_king_position
+    global black_pieces
+    global black_positions
+    global black_king_position
+
+    if turn == 'white':
+        king_position = white_king_position
         king_index = white_positions.index(king_position)
         ally_positions = white_positions
+        ally_options = white_options
         enemy_pieces = black_pieces
         enemy_positions = black_positions
-        enemy_colour = 'black'
     else:  # Black's turn
+        king_position = black_king_position
         king_index = black_positions.index(king_position)
         ally_positions = black_positions
+        ally_options = black_options
         enemy_pieces = white_pieces
         enemy_positions = white_positions
-        enemy_colour = 'white'
 
     moves_to_remove = []
     for i in range(len(ally_options[king_index])):
+        captured = False
         move = ally_options[king_index][i]
 
-        # If square is empty check enemy's possible moves to see if they are attacking the square
-        # Don't need to check if move is not in ally positions as that isn't a possible move
-        if move not in enemy_positions:
-            for j in range(len(enemy_options)):
-                if move in enemy_options[j]:
-                    moves_to_remove.append(i)
-                    break
-        else:  # If square is occupied by an enemy, pretend to capture to see if that would cause a check
-            # Temporarily complete the capturing of enemy piece
-            ally_positions[king_index] = move
-            captured_piece_index = enemy_positions.index(move)
-            captured_piece = enemy_pieces[captured_piece_index]
-            enemy_pieces.pop(captured_piece_index)
-            enemy_positions.pop(captured_piece_index)
+        # Pretend to move to this square
+        ally_positions[king_index] = move
+        if turn == 'white':
+            white_king_position = move
+        else:  # Black's turn
+            black_king_position = move
 
-            # Recalculate enemy moves based on new position of king, and determine if it is in check.
-            # If so, add this move to removal list
-            enemy_options_future = check_options(enemy_pieces, enemy_positions, enemy_colour)
-            for j in range(len(enemy_options_future)):
-                if move in enemy_options_future[j]:
-                    moves_to_remove.append(i)
-                    break
+        if move in enemy_positions:
+            # Temporarily complete the capturing of enemy
+            captured = True
+            captured_index = enemy_positions.index(move)
+            captured_piece = enemy_pieces[captured_index]
+            enemy_pieces.pop(captured_index)
+            enemy_positions.pop(captured_index)
 
-            # Undo the temporary capture
-            ally_positions[king_index] = king_position
-            if turn == 'black':
-                white_pieces = white_pieces[0:captured_piece_index] + [captured_piece] + white_pieces[captured_piece_index:]
-                white_positions = white_positions[0:captured_piece_index] + [move] + white_positions[captured_piece_index:]
-            else:  # White's turn
-                black_pieces = black_pieces[0:captured_piece_index] + [captured_piece] + black_pieces[captured_piece_index:]
-                black_positions = black_positions[0:captured_piece_index] + [move] + black_positions[captured_piece_index:]
-    print(ally_options[king_index])
-    print(moves_to_remove)
+        # Recalculate whether king is in check or not, if so add to removal list
+        in_check, _, _ = check_pins_and_checks(turn)
+        if in_check:
+            moves_to_remove.append(i)
+
+        # Undo the temporary capture
+        ally_positions[king_index] = king_position
+        if turn == 'black':
+            black_king_position = king_position
+            if captured:
+                white_pieces = white_pieces[0:captured_index] + [captured_piece] + white_pieces[captured_index:]
+                white_positions = white_positions[0:captured_index] + [move] + white_positions[captured_index:]
+        else:  # White's turn
+            white_king_position = king_position
+            if captured:
+                black_pieces = black_pieces[0:captured_index] + [captured_piece] + black_pieces[captured_index:]
+                black_positions = black_positions[0:captured_index] + [move] + black_positions[captured_index:]
+
+    # Iterate through the list backwards and remove the corresponding moves
     for move in moves_to_remove[::-1]:
         ally_options[king_index].pop(move)
 
-    return ally_options
+
+# Determines whether the game is over (checkmate or stalemate) and who the winner is
+def check_game_over(turn):
+    if turn == 'white':
+        ally_options = white_options
+        enemy_colour = 'Black'
+    else:  # Black's turn
+        ally_options = black_options
+        enemy_colour = 'White'
+
+    # Check if current player has any valid moves. If so, game is not over.
+    for i in range(len(ally_options)):
+        if ally_options[i]:
+            return False, '', ''
+
+    # If current player cannot make any valid move, game is over.
+    # If they are under check it is checkmate, otherwise it is stalemate
+    if under_check:
+        return True, 'Checkmate', enemy_colour
+    else:
+        return True, 'Stalemate', enemy_colour
 
 
+# Draws the game over screen. Message changes depending on the mode of game over - Forfeit, Stalemate, or Checkmate
+def draw_game_over(mode):
+    # Creating a transparent overlay for the game over screen
+    s = pygame.Surface((WIDTH, HEIGHT))
+    s.set_alpha(128)  # alpha level for transparency
+    s.fill(GREY)
+    screen.blit(s, (0, 0))
 
-#
-def check_pins_and_checks():
-    pass
+    if mode == 'Forfeit':
+        text1 = big_font.render(f'{winner} won the game due to opponent forfeiting!', True, WHITE)
+    elif mode == 'Checkmate':
+        text1 = big_font.render(f'Checkmate! {winner} won the game!', True, WHITE)
+    elif mode == 'Stalemate':
+        text1 = big_font.render(f'Stalemate!', True, WHITE)
 
-
-#
-def trim_invalid_moves():
-    pass
-
-
-#
-def check_game_over():
-    pass
+    text1_rect = text1.get_rect(center=(WIDTH / 2, HEIGHT / 2))
+    screen.blit(text1, text1_rect)
+    text2 = font.render(f'Press ENTER to Restart!', True, WHITE)
+    text2_rect = text2.get_rect(center=(WIDTH / 2, (HEIGHT + TILE_SIZE) / 2))
+    screen.blit(text2, text2_rect)
 
 
 # Main Game Loop
@@ -723,13 +919,13 @@ while run:
     draw_pieces()
     draw_captured()
 
-    # Check if king is in check, if so highlight it
-    if turn_step <= 1:
-        white_check = in_check(white_king_position, 'white')
-        draw_check(white_check, white_king_position)
-    else:
-        black_check = in_check(black_king_position, 'black')
-        draw_check(black_check, black_king_position)
+    # Check if king is in check, if so highlight it.
+    if turn_step <= 1:  # White's Turn
+        under_check, _, _ = check_pins_and_checks('white')
+        draw_check(under_check, white_king_position)
+    else:  # Black's Turn
+        under_check, _, _ = check_pins_and_checks('black')
+        draw_check(under_check, black_king_position)
 
     if white_promotion or black_promotion:
         pawn_promotion()
@@ -738,6 +934,15 @@ while run:
         valid_moves, castling_moves = return_valid_moves()
         draw_valid(valid_moves)
         draw_castling(castling_moves)
+
+    # Check for game over and if it is, draw the corresponding screen
+    if game_over:
+        draw_game_over(game_over_mode)
+    else:
+        if turn_step <= 1:  # White's Turn
+            game_over, game_over_mode, winner = check_game_over('white')
+        else:  # Black's Turn
+            game_over, game_over_mode, winner = check_game_over('black')
 
     # Event Handling
     for event in pygame.event.get():
@@ -754,11 +959,13 @@ while run:
             y_coord = (event.pos[1] - Y_OFFSET) // TILE_SIZE
             click_coords = (x_coord, y_coord)
 
-            if turn_step <= 1:
+            if turn_step <= 1:  # White's Turn
                 # If forfeit button is pressed
                 if forfeit_coords[0][0] <= event.pos[0] <= forfeit_coords[0][0] + TILE_SIZE * 2.05 and \
                         forfeit_coords[0][1] <= event.pos[1] <= forfeit_coords[0][1] + TILE_SIZE * 0.55:
                     winner = 'Black'
+                    game_over = True
+                    game_over_mode = 'Forfeit'
 
                 # Determine if a white piece is selected
                 if click_coords in white_positions:
@@ -791,6 +998,7 @@ while run:
                         white_promotion = True
                         white_promotion_index = selection
 
+                    # Update king's position
                     if white_pieces[selection] == 'king':
                         white_king_position = click_coords
 
@@ -800,11 +1008,12 @@ while run:
                     # Reset/Update values for next turn
                     black_options = check_options(black_pieces, black_positions, 'black')
                     white_options = check_options(white_pieces, white_positions, 'white')
-                    black_options = trim_invalid_king_moves(black_options, white_options, black_king_position, 'black')
-                    white_options = trim_invalid_king_moves(white_options, black_options, white_king_position, 'white')
+                    trim_invalid_moves('black')
                     turn_step = 2
                     selection = -1
                     valid_moves = []
+
+                # Check if castling occurred
                 elif click_coords in castling_moves and selection != -1:
                     last_moved = [white_pieces[selection], white_positions[selection], click_coords]
                     white_positions[selection] = click_coords
@@ -824,16 +1033,18 @@ while run:
                     # Reset/Update values for next turn
                     black_options = check_options(black_pieces, black_positions, 'black')
                     white_options = check_options(white_pieces, white_positions, 'white')
-                    black_options = trim_invalid_king_moves(black_options, white_options, black_king_position, 'black')
-                    white_options = trim_invalid_king_moves(white_options, black_options, white_king_position, 'white')
+                    trim_invalid_moves('black')
                     turn_step = 2
                     selection = -1
                     valid_moves = []
-            else:
+
+            else:  # Black's Turn
                 # If forfeit button is pressed
                 if forfeit_coords[1][0] <= event.pos[0] <= forfeit_coords[1][0] + TILE_SIZE * 2.05 and \
                         forfeit_coords[1][1] <= event.pos[1] <= forfeit_coords[1][1] + TILE_SIZE * 0.55:
                     winner = 'White'
+                    game_over = True
+                    game_over_mode = 'Forfeit'
 
                 # Determine if a black piece is selected
                 if click_coords in black_positions:
@@ -845,13 +1056,15 @@ while run:
                 if click_coords in valid_moves and selection != -1:
                     last_moved = [black_pieces[selection], black_positions[selection], click_coords]
                     black_positions[selection] = click_coords
+
+                    # Check if an enemy piece was captured
                     if click_coords in white_positions:
                         white_piece_index = white_positions.index(click_coords)
                         captured_pieces_black.append(white_pieces[white_piece_index])
                         white_pieces.pop(white_piece_index)
                         white_positions.pop(white_piece_index)
 
-                    # adding check if en passant pawn was captured
+                    # Check if en passant pawn was captured
                     if click_coords == en_passant_coords:
                         white_piece_index = white_positions.index((en_passant_coords[0], en_passant_coords[1] + 1))
                         captured_pieces_black.append(white_pieces[white_piece_index])
@@ -864,6 +1077,7 @@ while run:
                         black_promotion = True
                         black_promotion_index = selection
 
+                    # Update king's position
                     if black_pieces[selection] == 'king':
                         black_king_position = click_coords
 
@@ -873,11 +1087,12 @@ while run:
                     # Reset/Update values for next turn
                     black_options = check_options(black_pieces, black_positions, 'black')
                     white_options = check_options(white_pieces, white_positions, 'white')
-                    black_options = trim_invalid_king_moves(black_options, white_options, black_king_position, 'black')
-                    white_options = trim_invalid_king_moves(white_options, black_options, white_king_position, 'white')
+                    trim_invalid_moves('white')
                     turn_step = 0
                     selection = -1
                     valid_moves = []
+
+                # Check if castling occurred
                 elif click_coords in castling_moves and selection != -1:
                     last_moved = [black_pieces[selection], black_positions[selection], click_coords]
                     black_positions[selection] = click_coords
@@ -897,16 +1112,18 @@ while run:
                     # Reset/Update values for next turn
                     black_options = check_options(black_pieces, black_positions, 'black')
                     white_options = check_options(white_pieces, white_positions, 'white')
-                    black_options = trim_invalid_king_moves(black_options, white_options, black_king_position, 'black')
-                    white_options = trim_invalid_king_moves(white_options, black_options, white_king_position, 'white')
+                    trim_invalid_moves('white')
                     turn_step = 0
                     selection = -1
                     valid_moves = []
 
         if event.type == pygame.KEYDOWN and game_over:
+            # If enter key is pressed, reset the game, so they can play again
             if event.key == pygame.K_RETURN:
-                game_over = False
                 winner = ''
+                game_over = False
+                game_over_mode = ''
+                under_check = False
                 white_pieces = ['rook', 'knight', 'bishop', 'king', 'queen', 'bishop', 'knight', 'rook',
                                 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn']
                 white_positions = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0),
@@ -933,10 +1150,6 @@ while run:
                 white_promotion_index = -1
                 black_promotion = False
                 black_promotion_index = -1
-
-    if winner != '':
-        game_over = True
-        draw_game_over()
 
     pygame.display.flip()
 pygame.quit()
