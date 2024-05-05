@@ -13,12 +13,14 @@ I have been playing chess since elementary school and ever since learning to cod
 * pygame 2.5.2
 
 ## TODO
-- [ ] Implement removal of non-valid moves when in Check or if a piece is pinned
-- [ ] Implement Checkmate, and Stalemates
-- [ ] Add timer for blitz/speed chess
+- [X] Implement removal of non-valid moves when in Check or if a piece is pinned
+- [X] Implement Checkmate, and Stalemate (no valid moves but not in check)
 - [ ] Cleaning up the code - Separate into different files and functions
-- [ ] Main menu to select game mode (player vs player/computer), customize board colours, change piece styles
 - [ ] Create Chess AI/Bot
-- [ ] Optimize code - Using dictionaries, numpy array
-- [ ] Stalemate on 3 repeated moves or 50 moves without capture/pawn advancement.
-- [ ] Add in recording and viewing functionality - save a log of past chess games using notation so that they can be reviewed at a later date
+- [ ] Main menu to select game mode (player vs player/computer), customize board colours, change piece styles
+- [ ] Optimize code - Using dictionaries, objects, etc.
+- [ ] Add timer for blitz/speed chess
+- [ ] Create a chess notation system to keep a record of chess games
+- [ ] Add a function to open and view old games by pulling up the chess notation logs
+- [ ] Implement Stalemate due to threefold repetition (same position occurs three times during the game) or fifty-move rule (50 moves without capture/pawn advancement)
+
