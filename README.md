@@ -4,6 +4,7 @@
 * [General info](#general-info)
 * [Technologies](#technologies)
 * [TODO](#todo)
+* [Showcase](#showcase)
 
 ## General info
 I have been playing chess since elementary school and ever since learning to code, have wanted to make my own Chess Engine. This is my take on a chess engine. Eventually, I will also create a chess bot, so that you can play against a computer.
@@ -24,3 +25,18 @@ I have been playing chess since elementary school and ever since learning to cod
 - [ ] Add a function to open and view old games by pulling up the chess notation logs
 - [ ] Implement Stalemate due to threefold repetition (same position occurs three times during the game) or fifty-move rule (50 moves without capture/pawn advancement)
 
+## Showcase
+### Checkmate
+<p align="center">
+  <img src="../main/Screenshots/Chess - Checkmate.gif">
+</p>
+
+### Castling
+<p align="center">
+  <img src="../main/Screenshots/Chess - Castling.gif">
+</p>
+
+### Pawn Promotion
+<p align="center">
+  <img src="../main/Screenshots/Chess - Pawn Promotion.gif">
+</p>
