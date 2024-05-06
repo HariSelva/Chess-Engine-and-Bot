@@ -573,7 +573,12 @@ def update_castling_state(piece_moved, original_position, state):
 
 # Checks if the king can complete a castling operation - castling availability (aka state), under checks, and open path
 def check_castling(king_position, turn, state):
+    global white_king_position
+    global black_king_position
+
     if state == 3:
+        return []
+    if under_check:
         return []
 
     castling_options = []  # store each valid castle move as [[(king_coords)], [(castle_coords)]]
@@ -589,20 +594,63 @@ def check_castling(king_position, turn, state):
     if state == 0 or state == 1:
         castling = True
         squares_to_check = [(king_position[0] - 1, king_position[1]), (king_position[0] - 2, king_position[1])]
-        for square in squares_to_check:
-            # Check if these squares have a piece on them and whether they are in check. If so castling not possible
-            if square in ally_positions or square in enemy_positions or square in enemy_options:
-                castling = False
+        # Check if these squares have a piece on them. If so castling not possible
+        if (squares_to_check[0] in ally_positions or squares_to_check[0] in enemy_positions) or \
+                (squares_to_check[1] in ally_positions or squares_to_check[1] in enemy_positions):
+            castling = False
+        else:  # Squares are empty. Thus, check if king will move through or end in check.
+            king_index = ally_positions.index(king_position)
+            for square in squares_to_check:
+
+                # Pretend to move to this square
+                ally_positions[king_index] = square
+                if turn == 'white':
+                    white_king_position = square
+                else:  # Black's turn
+                    black_king_position = square
+
+                # Recalculate whether king is in check or not, if so add to removal list
+                in_check, _, _ = check_pins_and_checks(turn)
+                if in_check:
+                    castling = False
+
+                # Undo the temporary move
+                ally_positions[king_index] = king_position
+                if turn == 'black':
+                    black_king_position = king_position
+                else:  # White's turn
+                    white_king_position = king_position
         if castling:
             castling_options.append((king_position[0] - 2, king_position[1]))
     if state == 0 or state == 2:
         castling = True
-        squares_to_check = [(king_position[0] + 1, king_position[1]), (king_position[0] + 2, king_position[1]),
-                            (king_position[0] + 3, king_position[1])]
-        for square in squares_to_check:
-            # Check if these squares have a piece on them and whether they are in check. If so castling not possible
-            if square in ally_positions or square in enemy_positions or square in enemy_options:
-                castling = False
+        squares_to_check = [(king_position[0] + 1, king_position[1]), (king_position[0] + 2, king_position[1])]
+        # Check if these squares have a piece on them. If so castling not possible
+        if (squares_to_check[0] in ally_positions or squares_to_check[0] in enemy_positions) or \
+                (squares_to_check[1] in ally_positions or squares_to_check[1] in enemy_positions):
+            castling = False
+        else:  # Squares are empty. Thus, check if king will move through or end in check.
+            king_index = ally_positions.index(king_position)
+            for square in squares_to_check:
+
+                # Pretend to move to this square
+                ally_positions[king_index] = square
+                if turn == 'white':
+                    white_king_position = square
+                else:  # Black's turn
+                    black_king_position = square
+
+                # Recalculate whether king is in check or not, if so add to removal list
+                in_check, _, _ = check_pins_and_checks(turn)
+                if in_check:
+                    castling = False
+
+                # Undo the temporary move
+                ally_positions[king_index] = king_position
+                if turn == 'black':
+                    black_king_position = king_position
+                else:  # White's turn
+                    white_king_position = king_position
         if castling:
             castling_options.append((king_position[0] + 2, king_position[1]))
     return castling_options
