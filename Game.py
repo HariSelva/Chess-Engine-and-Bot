@@ -539,14 +539,12 @@ def pawn_promotion():
         white_promotion = False
 
         black_options = check_options(black_pieces, black_positions, 'black')
-        white_options = check_options(white_pieces, white_positions, 'white')
         trim_invalid_moves('black')
     elif black_promotion and left_click and window_corner[0] <= x_pos <= window_corner[0] + TILE_SIZE \
             and 0 <= y_pos < 4:
         black_pieces[black_promotion_index] = promotion_options[y_pos]
         black_promotion = False
 
-        black_options = check_options(black_pieces, black_positions, 'black')
         white_options = check_options(white_pieces, white_positions, 'white')
         trim_invalid_moves('white')
 
@@ -581,14 +579,12 @@ def check_castling(king_position, turn, state):
     if under_check:
         return []
 
-    castling_options = []  # store each valid castle move as [[(king_coords)], [(castle_coords)]]
+    castling_options = []  # store each valid castle move as [(king_coords)]]
     if turn == 'white':
         enemy_positions = black_positions
-        enemy_options = black_options
         ally_positions = white_positions
     else:  # Black's turn
         enemy_positions = white_positions
-        enemy_options = white_options
         ally_positions = black_positions
 
     if state == 0 or state == 1:
@@ -958,7 +954,6 @@ def draw_game_over(mode):
 
 # Main Game Loop
 run = True
-black_options = check_options(black_pieces, black_positions, 'black')
 white_options = check_options(white_pieces, white_positions, 'white')
 while run:
     timer.tick(fps)
@@ -1055,7 +1050,6 @@ while run:
 
                     # Reset/Update values for next turn
                     black_options = check_options(black_pieces, black_positions, 'black')
-                    white_options = check_options(white_pieces, white_positions, 'white')
                     trim_invalid_moves('black')
                     turn_step = 2
                     selection = -1
@@ -1080,7 +1074,6 @@ while run:
 
                     # Reset/Update values for next turn
                     black_options = check_options(black_pieces, black_positions, 'black')
-                    white_options = check_options(white_pieces, white_positions, 'white')
                     trim_invalid_moves('black')
                     turn_step = 2
                     selection = -1
@@ -1133,7 +1126,6 @@ while run:
                     black_castling_state = update_castling_state(last_moved[0], last_moved[1], black_castling_state)
 
                     # Reset/Update values for next turn
-                    black_options = check_options(black_pieces, black_positions, 'black')
                     white_options = check_options(white_pieces, white_positions, 'white')
                     trim_invalid_moves('white')
                     turn_step = 0
@@ -1158,7 +1150,6 @@ while run:
                     black_castling_state = update_castling_state(last_moved[0], last_moved[1], black_castling_state)
 
                     # Reset/Update values for next turn
-                    black_options = check_options(black_pieces, black_positions, 'black')
                     white_options = check_options(white_pieces, white_positions, 'white')
                     trim_invalid_moves('white')
                     turn_step = 0
@@ -1192,7 +1183,7 @@ while run:
                 turn_step = 0
                 selection = -1
                 valid_moves = []
-                black_options = check_options(black_pieces, black_positions, 'black')
+                black_options = []
                 white_options = check_options(white_pieces, white_positions, 'white')
                 white_promotion = False
                 white_promotion_index = -1
