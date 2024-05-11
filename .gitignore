@@ -1,3 +1,4 @@
 # ignore IDE files
 .idea/
 venv/
+__pycache__
