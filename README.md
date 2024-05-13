@@ -16,7 +16,7 @@ I have been playing chess since elementary school and ever since learning to cod
 ## TODO
 - [X] Implement removal of non-valid moves when in Check or if a piece is pinned
 - [X] Implement Checkmate, and Stalemate (no valid moves but not in check)
-- [ ] Cleaning up the code - Separate into different files and functions
+- [X] Cleaning up the code - Separate into different files and functions
 - [ ] Create Chess AI/Bot
 - [ ] Main menu to select game mode (player vs player/computer), customize board colours, change piece styles
 - [ ] Optimize code - Using dictionaries, objects, etc.
