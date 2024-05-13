@@ -1,14 +1,14 @@
 # Check all the possible moves for each piece on the board not taking into account checks.
-def check_options(turn, last_moved, ally_pieces, ally_positions, enemy_positions):
+def check_options(turn, last_moved, en_passant_coords, ally_pieces, ally_positions, enemy_positions):
     moves_list = []
     all_moves_list = []
-    en_passant_coords = (-1, 1)
 
     for i in range(len(ally_pieces)):
         piece = ally_pieces[i]
         position = ally_positions[i]
         if piece == 'pawn':
-            moves_list, en_passant_coords = check_pawn(position, turn, last_moved, ally_positions, enemy_positions)
+            moves_list, en_passant_coords = check_pawn(position, turn, last_moved, en_passant_coords,
+                                                       ally_positions, enemy_positions)
         elif piece == 'queen':
             moves_list = check_queen(position, ally_positions, enemy_positions)
         elif piece == 'king':
@@ -25,11 +25,10 @@ def check_options(turn, last_moved, ally_pieces, ally_positions, enemy_positions
 
 
 # Checks for all moves of the given pawn
-def check_pawn(position, turn, last_moved, ally_positions, enemy_positions):
+def check_pawn(position, turn, last_moved, en_passant_coords, ally_positions, enemy_positions):
     moves_list = []
     pawn_x = position[0]
     pawn_y = position[1]
-    en_passant_coords = (-1, -1)
     if turn == 'white':
         # Move pawn forward 1 space
         if (pawn_x, pawn_y + 1) not in enemy_positions and (pawn_x, pawn_y + 1) not in ally_positions and pawn_y < 7:
@@ -462,4 +461,3 @@ def check_castling(turn, king_position, castling_state, under_check, ally_positi
         if castling:
             castling_options.append((king_position[0] + 2, king_position[1]))
     return castling_options
-
