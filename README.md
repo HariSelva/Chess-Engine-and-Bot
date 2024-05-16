@@ -40,3 +40,8 @@ I have been playing chess since elementary school and ever since learning to cod
 <p align="center">
   <img src="../main/Screenshots/Chess - Pawn Promotion.gif">
 </p>
+
+### En Passant
+<p align="center">
+  <img src="../main/Screenshots/Chess - En Passant.gif">
+</p>
