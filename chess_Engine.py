@@ -25,7 +25,8 @@ def return_valid_moves():
 # Moves the selected piece to the destination (if a valid one is chosen) and take the appropriate actions
 # (capture, en passant, castling)
 def move_selected(selected, destination, prev_move, king_position, coords_en_passant, pawn_dir, valid_options,
-                  castling_options, castling_state, ally_pieces, ally_positions, enemy_pieces, enemy_positions):
+                  castling_options, castling_state, ally_pieces, ally_positions, captured_pieces, enemy_pieces,
+                  enemy_positions):
     piece_moved = False
     promotion = False
     promotion_index = -1
@@ -39,14 +40,14 @@ def move_selected(selected, destination, prev_move, king_position, coords_en_pas
         # Check if an enemy piece was captured
         if destination in enemy_positions:
             enemy_piece_index = enemy_positions.index(destination)
-            captured_pieces_white.append(enemy_pieces[enemy_piece_index])
+            captured_pieces.append(enemy_pieces[enemy_piece_index])
             enemy_pieces.pop(enemy_piece_index)
             enemy_positions.pop(enemy_piece_index)
 
         # check if en passant pawn was captured
         if destination == coords_en_passant:
             enemy_piece_index = enemy_positions.index((coords_en_passant[0], coords_en_passant[1] - pawn_dir))
-            captured_pieces_white.append(enemy_pieces[enemy_piece_index])
+            captured_pieces.append(enemy_pieces[enemy_piece_index])
             enemy_pieces.pop(enemy_piece_index)
             enemy_positions.pop(enemy_piece_index)
             coords_en_passant = (-1, -1)
@@ -185,7 +186,8 @@ while run:
                                                                      white_king_position, en_passant_coords, 1,
                                                                      valid_moves, castling_moves,
                                                                      white_castling_state, white_pieces,
-                                                                     white_positions, black_pieces, black_positions)
+                                                                     white_positions, captured_pieces_white,
+                                                                     black_pieces, black_positions)
 
                 if move_done:
                     # Reset/Update values for next turn
@@ -216,7 +218,8 @@ while run:
                     black_castling_state, last_moved = move_selected(selection, click_coords, last_moved,
                                                                      black_king_position, en_passant_coords, -1,
                                                                      valid_moves, castling_moves, black_castling_state,
-                                                                     black_pieces, black_positions, white_pieces,
+                                                                     black_pieces, black_positions,
+                                                                     captured_pieces_black, white_pieces,
                                                                      white_positions)
 
                 if move_done:
