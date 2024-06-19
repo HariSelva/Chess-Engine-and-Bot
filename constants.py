@@ -30,6 +30,9 @@ PIECE_DIMENSIONS = (TILE_SIZE * 0.8, TILE_SIZE * 0.8)
 PAWN_DIMENSIONS = (TILE_SIZE * 0.65, TILE_SIZE * 0.65)
 SMALL_PIECE_DIMENSIONS = (TILE_SIZE * 0.45, TILE_SIZE * 0.45)
 FORFEIT_COORDS = [(int(WIDTH * 0.045), int(HEIGHT * 0.023)), (int(WIDTH * 0.813), int(HEIGHT * 0.912))]
+TOP_FORFEIT = (FORFEIT_COORDS[0], (FORFEIT_COORDS[0][0] + TILE_SIZE * 2.05, FORFEIT_COORDS[0][1] + TILE_SIZE * 0.55))
+BOT_FORFEIT = (FORFEIT_COORDS[1], (FORFEIT_COORDS[1][0] + TILE_SIZE * 2.05, FORFEIT_COORDS[1][1] + TILE_SIZE * 0.55))
+FORFEIT_COORDINATES = [TOP_FORFEIT, BOT_FORFEIT]
 
 # Colour Variables
 WHITE = (255, 255, 255)
@@ -92,6 +95,18 @@ SMALL_WHITE_IMAGES = [white_pawn_small, white_queen_small, white_king_small, whi
 BLACK_IMAGES = [black_pawn, black_queen, black_king, black_knight, black_rook, black_bishop]
 SMALL_BLACK_IMAGES = [black_pawn_small, black_queen_small, black_king_small, black_knight_small,
                       black_rook_small, black_bishop_small]
+
+# pieces = ['rook', 'knight', 'bishop', 'king', 'queen', 'bishop', 'knight', 'rook',
+#                 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn', 'pawn']
+WHITE_TOP_POSITIONS = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0),
+                       (0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1)]
+WHITE_BOT_POSITIONS = [(0, 7), (1, 7), (2, 7), (4, 7), (3, 7), (5, 7), (6, 7), (7, 7),
+                       (0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (6, 6), (7, 6)]
+BLACK_TOP_POSITIONS = [(0, 0), (1, 0), (2, 0), (4, 0), (3, 0), (5, 0), (6, 0), (7, 0),
+                       (0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1)]
+BLACK_BOT_POSITIONS = [(0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7),
+                       (0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (6, 6), (7, 6)]
+POSITIONS = [WHITE_TOP_POSITIONS, WHITE_BOT_POSITIONS, BLACK_TOP_POSITIONS, BLACK_BOT_POSITIONS]
 
 # Miscellaneous
 PROMOTION_OPTIONS = ['bishop', 'knight', 'rook', 'queen']
