@@ -1,7 +1,7 @@
 import random
 
 
-# Plays a random move from the valid move set. Note that this AI doesn't know how to castle.
+# Plays a random move from the valid move set.
 def find_random_move(valid_moves):
     flattened_valid_moves = [move
                              for moves in valid_moves
